@@ -1,8 +1,11 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import WelcomeScreen from "./components/WelcomeScreen";
+import RegisterScreen from "./components/RegisterScreen";
 import LoginScreen from "./components/LoginScreen";
 import MainScreen from "./components/MainScreen";
+import MainTwoScreen from "./components/MainTwoScreen";
 import { View, Text, StyleSheet } from "react-native";
 
 const Stack = createNativeStackNavigator();
@@ -10,13 +13,12 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <View style={styles.header}>
-        <Text style={styles.title}>UPX5 - BALANÇA INTELIGENTE</Text>
-      </View>
-
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator initialRouteName="Welcome">
+        <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Main" component={MainScreen} options={{ title: "Calculadora de Calorias" }} />
+        <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="MainTwo" component={MainTwoScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -26,8 +28,8 @@ const styles = StyleSheet.create({
   header: {
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 40, 
-    paddingBottom: 20, 
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 24,
