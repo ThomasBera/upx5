@@ -26,10 +26,20 @@ const alimentosComunsAlmocoJantarEmIngles = [
   'Rice with lentils', 'Rice with vegetables', 'Rice with shrimp', 'Fish with rice', 'Chicken hidden'
 ];
 
+const tiposDeAlimento = [
+  { label: 'Todos', value: '' },
+  { label: 'Carne', value: 'Carne' },
+  { label: 'Vegetal', value: 'Vegetal' },
+  { label: 'Grão', value: 'Grão' },
+  { label: 'Fruta', value: 'Fruta' },
+  { label: 'Processados', value: 'Processados' },
+  { label: 'Outros', value: 'Outros' },
+];
+
 export default function MainTwoScreen({ navigation }) {
   const [alimentos, setAlimentos] = useState([]);
   const [alimentoSelecionado, setAlimentoSelecionado] = useState(null);
-  const [peso, setPeso] = useState("");
+  const [tipoSelecionado, setTipoSelecionado] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -58,15 +68,12 @@ export default function MainTwoScreen({ navigation }) {
     fetchAlimentos();
   }, []);
 
-  const caloriasTotais = peso ? (
-    parseFloat(peso) *
-    (alimentoSelecionado?.foodNutrients?.find(nutrient => nutrient.nutrientName === 'Energy')?.value || 0) / 100
-  ).toFixed(2) : "0.00";
+  const irParaResultado = () => {
+    if (!alimentoSelecionado) return;
 
-  const voltarParaLogin = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
+    navigation.navigate('Resultado', {
+      alimentoSelecionado,
+      tipoSelecionado,
     });
   };
 
@@ -91,23 +98,24 @@ export default function MainTwoScreen({ navigation }) {
         </View>
       )}
 
-      <Text style={styles.label}>Peso (g):</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        placeholder="Digite o peso em gramas"
-        value={peso}
-        onChangeText={setPeso}
-      />
+      <Text style={styles.label}>Tipo do alimento:</Text>
+      <View style={styles.pickerWrapper}>
+        <RNPickerSelect
+          onValueChange={(value) => setTipoSelecionado(value)}
+          items={tiposDeAlimento}
+          placeholder={{ label: "Selecione um tipo...", value: "" }}
+          value={tipoSelecionado}
+          style={pickerSelectStyles}
+        />
+      </View>
 
-      <Text style={styles.resultado}>Total de calorias: {caloriasTotais} kcal</Text>
-
-      <TouchableOpacity style={styles.voltarButton} onPress={voltarParaLogin}>
+      <TouchableOpacity style={styles.voltarButton} onPress={irParaResultado}>
         <Text style={styles.voltarButtonText}>Pesar Agora!</Text>
       </TouchableOpacity>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

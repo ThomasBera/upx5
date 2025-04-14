@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import WelcomeScreen from "./components/WelcomeScreen";
 import RegisterScreen from "./components/RegisterScreen";
 import LoginScreen from "./components/LoginScreen";
-import MainScreen from "./components/MainScreen";
+import ResultadoScreen from "./components/ResultadoScreen";
 import MainTwoScreen from "./components/MainTwoScreen";
 import { View, Text, StyleSheet } from "react-native";
 
@@ -16,7 +16,7 @@ export default function App() {
       <Stack.Navigator initialRouteName="Welcome">
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Resultado" component={ResultadoScreen} options={{ headerShown: false }} />
         <Stack.Screen name="MainTwo" component={MainTwoScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
