@@ -1,30 +1,72 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import Svg, { Circle } from "react-native-svg";
 
-// Componente principal da tela de resultado
+const TOKEN = 'fph0B4WXiwJ_exOYSrSwM4_VlYaGYGBy';
+const VIRTUAL_PIN = 'V0';
+
 export default function ResultadoScreen({ route }) {
   const navigation = useNavigation();
-  const { peso, alimentoSelecionado, tipoSelecionado } = route.params;
+  const { alimentoSelecionado, tipoSelecionado } = route.params;
 
-  const calorias = peso
-    ? (
-        parseFloat(peso) *
-        (alimentoSelecionado?.foodNutrients?.find(nutrient => nutrient.nutrientName === 'Energy')?.value || 0) / 100
-      ).toFixed(2)
-    : "0.00";
+  const [peso, setPeso] = useState(0);
+  const [calorias, setCalorias] = useState("0.00");
+  const [errorPeso, setErrorPeso] = useState(null);
+
+  const getPeso = async () => {
+    setErrorPeso(null);
+    try {
+      const response = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&${VIRTUAL_PIN}`);
+      console.log("Resposta da API:", response);
+      if (!response.ok) {
+        throw new Error(`Erro HTTP! status: ${response.status}`);
+      }
+      const data = await response.text();
+      console.log("Dados recebidos:", data);
+      const pesoAtual = parseFloat(data);
+      console.log("Peso após parseFloat:", pesoAtual);
+      if (isNaN(pesoAtual)) {
+        throw new Error("Recebido dado não numérico do Blynk.");
+      }
+      setPeso(pesoAtual);
+
+      const energyNutrient = alimentoSelecionado?.foodNutrients?.find(n => n.nutrientName === 'Energy');
+      const caloriasCalculadas = (
+        pesoAtual * (energyNutrient?.value || 0) / 100
+      ).toFixed(2);
+      setCalorias(caloriasCalculadas);
+    } catch (error) {
+      console.log("Erro ao buscar peso:", error);
+      setErrorPeso(error.message);
+      setPeso(0);
+      setCalorias("0.00");
+    }
+  };
+
+  useEffect(() => {
+    getPeso();
+
+    const interval = setInterval(() => {
+      getPeso();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [alimentoSelecionado]);
+
+  useEffect(() => {
+    console.log("Estado do peso:", peso);
+  }, [peso]);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Topo Verde com seta de voltar */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
       </View>
 
-      {/* Conteúdo principal */}
       <View style={styles.content}>
         <Text style={styles.title}>Pesagem do alimento</Text>
 
@@ -38,16 +80,54 @@ export default function ResultadoScreen({ route }) {
           <Text style={styles.infoValue}>{tipoSelecionado || "Não especificado"}</Text>
         </View>
 
-        <Text style={styles.calorias}>{calorias} kcal</Text>
+        {errorPeso ? (
+          <Text style={{ color: 'red' }}>Erro ao buscar peso: {errorPeso}</Text>
+        ) : (
+          <Text style={styles.calorias}>{calorias} kcal</Text>
+        )}
 
-        {/* Medidor novo */}
-        <NivelDePeso peso={parseFloat(peso)} pesoMaximo={200} />
+        <MedidorSemiCircular peso={peso} pesoMaximo={200} />
       </View>
     </SafeAreaView>
   );
 }
 
-// Estilos da tela
+function MedidorSemiCircular({ peso, pesoMaximo }) {
+  const raio = 100;
+  const circunferencia = Math.PI * raio;
+  const progresso = Math.min(peso / pesoMaximo, 1);
+
+  return (
+    <View style={gaugeStyles.container}>
+      <Svg width={220} height={110}>
+        <Circle
+          cx="110"
+          cy="110"
+          r={raio}
+          stroke="#D9D9D9"
+          strokeWidth="20"
+          fill="none"
+          strokeDasharray={`${circunferencia}`}
+          strokeDashoffset={circunferencia / 2}
+          strokeLinecap="round"
+        />
+        <Circle
+          cx="110"
+          cy="110"
+          r={raio}
+          stroke="#1F8B24"
+          strokeWidth="20"
+          fill="none"
+          strokeDasharray={`${circunferencia}`}
+          strokeDashoffset={circunferencia * (1 - progresso) + circunferencia / 2}
+          strokeLinecap="round"
+        />
+      </Svg>
+      <Text style={gaugeStyles.text}>{peso.toFixed(2)}g</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -73,10 +153,7 @@ const styles = StyleSheet.create({
   },
   infoBox: {
     backgroundColor: "#E5E5E5",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 2,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 12,
+    borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
     marginVertical: 8,
@@ -100,54 +177,18 @@ const styles = StyleSheet.create({
   },
 });
 
-// Componente de medidor visual do peso
-function NivelDePeso({ peso, pesoMaximo = 200 }) {
-  const porcentagem = Math.min((peso / pesoMaximo) * 100, 100);
-
-  return (
-    <View style={nivelStyles.container}>
-      <View style={nivelStyles.arcContainer}>
-        <View style={nivelStyles.arc}>
-          <View style={[nivelStyles.fill, { width: `${porcentagem}%` }]} />
-        </View>
-      </View>
-      <Text style={nivelStyles.label}>Peso: {peso}g</Text>
-    </View>
-  );
-}
-
-// Estilo do componente NivelDePeso
-const nivelStyles = StyleSheet.create({
+const gaugeStyles = StyleSheet.create({
   container: {
-    marginTop: 40,
+    marginTop: 30,
     alignItems: "center",
+    justifyContent: "center",
   },
-  arcContainer: {
-    width: 160,
-    height: 80,
-    overflow: "hidden",
-  },
-  arc: {
-    width: "100%",
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 12,
-    borderColor: "#1F8B24",
-    backgroundColor: "#EE8E8",
-    position: "relative",
-    transform: [{ rotate: "180deg" }],
-  },
-  fill: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    height: "100%",
-    backgroundColor: "#1F8B24",
-  },
-  label: {
+  text: {
     marginTop: 10,
     fontSize: 18,
     fontWeight: "bold",
     color: "#1F8B24",
+    position: "absolute",
+    top: 55,
   },
 });
